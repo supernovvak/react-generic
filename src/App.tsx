@@ -1,52 +1,103 @@
-import React, { useState } from 'react';
-import {MultiSelect} from "./components/Multiselect.tsx";
-import {SelectBox} from "./components/SelectBox.tsx";
+import React from 'react';
+import { Markdown, CodeBlock } from './components/Markdown';
+import { createTwoFilesPatch } from 'diff'; // npm install diff
+
+// Markdown content with text and code snippets.
+const markdownContent = `
+# Dark Mode Markdown Example
+
+This is a **Markdown** component in dark mode. It contains text and code snippets.
+
+## JavaScript Code Snippet
+
+\`\`\`javascript
+console.log("Hello, dark mode!");
+\`\`\`
+
+Some more descriptive text here.
+`;
+
+// Standalone Java code.
+const javaCode = `
+public class HelloWorld {
+    public static void main(String[] args) {
+        System.out.println("Hello, Java in Dark Mode!");
+    }
+}
+`;
+
+// Standalone Golang code.
+const goCode = `
+package main
+
+import "fmt"
+
+func main() {
+    fmt.Println("Hello, Go in Dark Mode!")
+}
+`;
+
+// Standalone unified diff (hardcoded).
+const unifiedDiffExample = `
+--- a/example.txt
++++ b/example.txt
+@@
+-Old line here
++New line here
+`;
+
+// Programmatically computed unified diff using 'diff' package.
+const originalText = `Line1
+Line2
+Line3`;
+
+const modifiedText = `Line1
+Line2 modified
+Line3`;
+
+const computedDiff = createTwoFilesPatch(
+  'original.txt',
+  'modified.txt',
+  originalText,
+  modifiedText,
+  '', ''
+);
 
 const App: React.FC = () => {
-  // MultiSelect state and options
-  const multiOptions = ["Option 1", "Option 2", "Option 3", "Option 4"];
-  const [multiSelected, setMultiSelected] = useState<string[]>([]);
-
-  // SelectBox state and options
-  const selectOptions = ["Red", "Green", "Blue", "Yellow"];
-  const [selectedColor, setSelectedColor] = useState<string | null>(null);
-
   return (
-      <div className="max-w-md mx-auto mt-10 space-y-6">
-        <h1 className="text-xl font-bold mb-4">Streamlit Components Demo</h1>
-
-        {/* MultiSelect Example */}
-        <div>
-          <h2 className="text-lg font-medium mb-2">MultiSelect</h2>
-          <MultiSelect
-              options={multiOptions}
-              selected={multiSelected}
-              onChange={setMultiSelected}
-              placeholder="Select options..."
-          />
-          <div className="mt-2">
-            <h3 className="text-sm font-medium">Selected Options:</h3>
-            <pre className="bg-gray-100 p-2 rounded">
-            {JSON.stringify(multiSelected, null, 2)}
-          </pre>
-          </div>
-        </div>
-
-        {/* SelectBox Example */}
-        <div>
-          <h2 className="text-lg font-medium mb-2">SelectBox</h2>
-          <SelectBox
-              options={selectOptions}
-              selected={selectedColor}
-              onChange={setSelectedColor}
-              placeholder="Select a color..."
-          />
-          <div className="mt-2">
-            <h3 className="text-sm font-medium">Selected Color:</h3>
-            <pre className="bg-gray-100 p-2 rounded">{selectedColor || "None"}</pre>
-          </div>
-        </div>
+    <div className="p-8 space-y-12 bg-gray-900 min-h-screen">
+      <h1 className="text-3xl font-bold text-white mb-4">Dark Mode Example</h1>
+      
+      {/* 1. Markdown with some code snippets and text */}
+      <div>
+        <h2 className="text-2xl font-bold text-white mb-2">Markdown Component</h2>
+        <Markdown content={markdownContent} theme="dark" />
       </div>
+      
+      {/* 2. Standalone CodeBlock with Java code */}
+      <div>
+        <h2 className="text-2xl font-bold text-white mb-2">Standalone CodeBlock (Java)</h2>
+        <CodeBlock inline={false} code={javaCode} theme="dark" className="language-java" />
+      </div>
+      
+      {/* 3. Standalone CodeBlock with Golang code */}
+      <div>
+        <h2 className="text-2xl font-bold text-white mb-2">Standalone CodeBlock (Golang)</h2>
+        <CodeBlock inline={false} code={goCode} theme="dark" className="language-go" />
+      </div>
+      
+      {/* 4. Standalone CodeBlock with unified diff (hardcoded) */}
+      <div>
+        <h2 className="text-2xl font-bold text-white mb-2">Standalone CodeBlock (Unified Diff)</h2>
+        <CodeBlock inline={false} code={unifiedDiffExample} theme="dark" className="language-diff" />
+      </div>
+      
+      {/* 5. Standalone CodeBlock with programmatically computed unified diff */}
+      <div>
+        <h2 className="text-2xl font-bold text-white mb-2">Standalone CodeBlock (Computed Unified Diff)</h2>
+        <CodeBlock inline={false} code={computedDiff} theme="dark" className="language-diff" />
+      </div>
+    </div>
   );
 };
 
