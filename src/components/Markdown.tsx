@@ -5,7 +5,7 @@ import rehypeHighlight from 'rehype-highlight';
 import hljs from 'highlight.js';
 import 'highlight.js/styles/github-dark.css'; // Import your Highlight.js dark theme
 
-// Helper to extract plain text from React nodes.
+// Helper: Recursively extract plain text from a React node.
 const getTextFromReactNode = (node: React.ReactNode): string => {
   if (typeof node === 'string' || typeof node === 'number') {
     return node.toString();
@@ -55,7 +55,8 @@ export const CodeBlock: React.FC<CodeBlockProps> = ({
       ? code
       : getTextFromReactNode(children).replace(/\n$/, '');
   
-  // For unified diff support: if no language is provided and the code looks like a unified diff, force language "diff".
+  // Use Highlight.js to generate highlighted HTML.
+  // If no language is provided and the code looks like a unified diff, force language "diff".
   const highlightedCode = useMemo(() => {
     if (codeContent) {
       let language = "";
@@ -90,7 +91,7 @@ export const CodeBlock: React.FC<CodeBlockProps> = ({
     }
   };
 
-  // When used standalone (code prop provided), remove extra vertical margin.
+  // When used standalone (via the code prop), remove extra vertical margin.
   const containerMarginClass = code !== undefined ? "" : "my-4";
   // Reset default margin on the <pre> element with m-0.
   const baseClasses = "rounded-md p-4 overflow-auto m-0";
@@ -141,7 +142,7 @@ export const Markdown: React.FC<MarkdownProps> = ({ content, theme = 'light' }) 
       ? 'bg-gray-900 prose prose-invert'
       : 'bg-white prose');
 
-  // Inject styles to force all non-code markdown text to white in dark mode.
+  // Inject dark mode styles to force all non-code markdown text to white.
   const darkTextStyles =
     theme === 'dark' && (
       <style>
@@ -169,19 +170,22 @@ export const Markdown: React.FC<MarkdownProps> = ({ content, theme = 'light' }) 
         remarkPlugins={[remarkGfm]}
         rehypePlugins={[rehypeHighlight]}
         components={{
-          // Override the paragraph to prevent wrapping code blocks in <p>
+          // Override paragraph to avoid wrapping block-level elements.
           p: ({ node, children, ...props }) => {
-            // If the paragraph's only child is a <pre>, return it directly.
-            if (
-              node.children &&
-              node.children.length === 1 &&
-              node.children[0].tagName === 'pre'
-            ) {
-              return <>{children}</>;
+            const childArray = React.Children.toArray(children);
+            if (childArray.length === 1) {
+              const child = childArray[0];
+              if (
+                React.isValidElement(child) &&
+                typeof child.type === 'string' &&
+                (child.type === 'div' || child.type === 'pre')
+              ) {
+                return <>{child}</>;
+              }
             }
             return <p {...props}>{children}</p>;
           },
-          // Override <pre> to unwrap it so our CodeBlock isn't nested in another <pre>
+          // Unwrap pre so our CodeBlock isn't nested in an extra <pre>
           pre: ({ node, children, ...props }) => <>{children}</>,
           code: ({ node, inline, className, children, ...props }) => (
             <CodeBlock
