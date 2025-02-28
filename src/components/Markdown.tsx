@@ -49,14 +49,13 @@ export const CodeBlock: React.FC<CodeBlockProps> = ({
   }
   
   const [copied, setCopied] = useState(false);
-  // Use the 'code' prop if provided; otherwise, extract from children.
+  // Use the code prop if provided; otherwise, extract from children.
   const codeContent =
     code !== undefined
       ? code
       : getTextFromReactNode(children).replace(/\n$/, '');
   
-  // Use Highlight.js to generate highlighted HTML.
-  // If no language is provided and the code looks like a unified diff, force language "diff".
+  // Determine syntax highlighting.
   const highlightedCode = useMemo(() => {
     if (codeContent) {
       let language = "";
@@ -91,13 +90,13 @@ export const CodeBlock: React.FC<CodeBlockProps> = ({
     }
   };
 
-  // When used standalone (via the code prop), remove extra vertical margin.
+  // If used as standalone (via code prop), remove extra vertical margin.
   const containerMarginClass = code !== undefined ? "" : "my-4";
-  // Reset default margin on the <pre> element with m-0.
+  // Reset default margin on <pre> with m-0.
   const baseClasses = "rounded-md p-4 overflow-auto m-0";
   const themeClasses =
     theme === 'dark'
-      ? "text-gray-100" // Background overridden inline below.
+      ? "text-gray-100" // Background will be set inline.
       : "bg-gray-100 text-gray-800";
 
   return (
@@ -142,7 +141,7 @@ export const Markdown: React.FC<MarkdownProps> = ({ content, theme = 'light' }) 
       ? 'bg-gray-900 prose prose-invert'
       : 'bg-white prose');
 
-  // Inject dark mode styles to force all non-code markdown text to white.
+  // Inject dark mode styles to force markdown text (outside code blocks) to white.
   const darkTextStyles =
     theme === 'dark' && (
       <style>
@@ -170,23 +169,21 @@ export const Markdown: React.FC<MarkdownProps> = ({ content, theme = 'light' }) 
         remarkPlugins={[remarkGfm]}
         rehypePlugins={[rehypeHighlight]}
         components={{
-          // Override paragraph to avoid wrapping block-level elements.
+          // Override the paragraph element.
           p: ({ node, children, ...props }) => {
+            // Unwrap if the only child is a block-level element.
             const childArray = React.Children.toArray(children);
-            if (childArray.length === 1) {
-              const child = childArray[0];
-              if (
-                React.isValidElement(child) &&
-                typeof child.type === 'string' &&
-                (child.type === 'div' || child.type === 'pre')
-              ) {
-                return <>{child}</>;
+            if (childArray.length === 1 && React.isValidElement(childArray[0])) {
+              const childType = childArray[0].type;
+              if (typeof childType === 'string' && (childType === 'pre' || childType === 'div')) {
+                return <>{childArray[0]}</>;
               }
             }
             return <p {...props}>{children}</p>;
           },
-          // Unwrap pre so our CodeBlock isn't nested in an extra <pre>
+          // Unwrap the pre element.
           pre: ({ node, children, ...props }) => <>{children}</>,
+          // Use our custom CodeBlock for code.
           code: ({ node, inline, className, children, ...props }) => (
             <CodeBlock
               node={node}
