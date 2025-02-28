@@ -3,9 +3,9 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeHighlight from 'rehype-highlight';
 import hljs from 'highlight.js';
-import 'highlight.js/styles/github-dark.css'; // Import a Highlight.js dark theme
+import 'highlight.js/styles/github-dark.css'; // Import your Highlight.js dark theme
 
-// Helper: Recursively extract plain text from a React node.
+// Helper to extract plain text from React nodes.
 const getTextFromReactNode = (node: React.ReactNode): string => {
   if (typeof node === 'string' || typeof node === 'number') {
     return node.toString();
@@ -30,7 +30,7 @@ export interface CodeBlockProps {
   className?: string;
   children?: React.ReactNode;
   theme?: 'light' | 'dark';
-  // When provided, use this string as the code content.
+  // When provided, this string is used as the code content.
   code?: string;
   [key: string]: any;
 }
@@ -49,13 +49,13 @@ export const CodeBlock: React.FC<CodeBlockProps> = ({
   }
   
   const [copied, setCopied] = useState(false);
+  // Use the 'code' prop if provided; otherwise, extract from children.
   const codeContent =
     code !== undefined
       ? code
       : getTextFromReactNode(children).replace(/\n$/, '');
   
-  // For unified diff support: if no language is provided and the code looks diff-like,
-  // force the language to "diff".
+  // For unified diff support: if no language is provided and the code looks like a unified diff, force language "diff".
   const highlightedCode = useMemo(() => {
     if (codeContent) {
       let language = "";
@@ -92,11 +92,11 @@ export const CodeBlock: React.FC<CodeBlockProps> = ({
 
   // When used standalone (code prop provided), remove extra vertical margin.
   const containerMarginClass = code !== undefined ? "" : "my-4";
-  // Reset default margin on the <pre> element.
+  // Reset default margin on the <pre> element with m-0.
   const baseClasses = "rounded-md p-4 overflow-auto m-0";
   const themeClasses =
     theme === 'dark'
-      ? "text-gray-100" // Background will be overridden inline.
+      ? "text-gray-100" // Background overridden inline below.
       : "bg-gray-100 text-gray-800";
 
   return (
@@ -141,7 +141,7 @@ export const Markdown: React.FC<MarkdownProps> = ({ content, theme = 'light' }) 
       ? 'bg-gray-900 prose prose-invert'
       : 'bg-white prose');
 
-  // Inject dark mode styles to force markdown text (outside code blocks) to white.
+  // Inject styles to force all non-code markdown text to white in dark mode.
   const darkTextStyles =
     theme === 'dark' && (
       <style>
@@ -169,6 +169,20 @@ export const Markdown: React.FC<MarkdownProps> = ({ content, theme = 'light' }) 
         remarkPlugins={[remarkGfm]}
         rehypePlugins={[rehypeHighlight]}
         components={{
+          // Override the paragraph to prevent wrapping code blocks in <p>
+          p: ({ node, children, ...props }) => {
+            // If the paragraph's only child is a <pre>, return it directly.
+            if (
+              node.children &&
+              node.children.length === 1 &&
+              node.children[0].tagName === 'pre'
+            ) {
+              return <>{children}</>;
+            }
+            return <p {...props}>{children}</p>;
+          },
+          // Override <pre> to unwrap it so our CodeBlock isn't nested in another <pre>
+          pre: ({ node, children, ...props }) => <>{children}</>,
           code: ({ node, inline, className, children, ...props }) => (
             <CodeBlock
               node={node}
